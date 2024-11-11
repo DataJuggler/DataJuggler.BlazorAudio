@@ -29,11 +29,11 @@ namespace DataJuggler.BlazorAudio
         
         #region Methods
             
-            #region FormatDisplayTime(double currentTime)
+            #region FormatDisplayTime(double totalSeconds)
             /// <summary>
             /// This method formats the seconds into Display Time
             /// </summary>
-            public static string FormatDisplayTime(double currentTime)
+            public static string FormatDisplayTime(double timeInSeconds)
             {
                 // initial value
                 string displayTime = "";
@@ -43,43 +43,53 @@ namespace DataJuggler.BlazorAudio
                     // Create a new instance of a 'StringBuilder' object.
                     StringBuilder sb = new StringBuilder();
                     
-                    // locals
-                    int hours = (int) Math.Floor(currentTime / 3600);
-                    int minutes = (int) Math.Floor(currentTime / 60);
-                    int seconds = (int) Math.Floor(currentTime % 60);
-                    
-                    // only include hours if it is set
-                    if (hours > 0)
+                    if (timeInSeconds > 0)
                     {
-                        // Append the hours and colon
-                        sb.Append(hours);
+                        // locals
+                        int hours = (int) Math.Floor(timeInSeconds / 3600);
+                        int minutes = (int) Math.Floor(timeInSeconds / 60);
+                        int seconds = (int) Math.Floor(timeInSeconds % 60);
+                    
+                        // only include hours if it is set
+                        if (hours > 0)
+                        {
+                            // Append the hours and colon
+                            sb.Append(hours);
+                            sb.Append(":");
+                        
+                            // reduce the minutes
+                            minutes -= (hours * 60);
+                        
+                            // if 1:09 minutes for example
+                            if (minutes < 10)
+                            {
+                                // Append a preceding 0
+                                sb.Append("0");
+                            }
+                        }
+                    
+                        // Append the minutes and colon
+                        sb.Append(minutes);
                         sb.Append(":");
-                        
-                        // reduce the minutes
-                        minutes -= (hours * 60);
-                        
-                        // if 1:09 minutes for example
-                        if (minutes < 10)
+                    
+                        // if the audio is 25:05 for example
+                        if (seconds < 10)
                         {
                             // Append a preceding 0
                             sb.Append("0");
                         }
+
+                        // Append the Seconds
+                        sb.Append(seconds);
+                    
+                        // Set the DisplayTime
+                        displayTime = sb.ToString();
                     }
-                    
-                    // Append the minutes and colon
-                    sb.Append(minutes);
-                    sb.Append(":");
-                    sb.Append(seconds);
-                    
-                    // if the audio is 25:05 for example
-                    if (seconds < 10)
+                    else
                     {
-                        // Append a preceding 0
-                        sb.Append("0");
+                        // Set to 0
+                        displayTime = "0:00";
                     }
-                    
-                    // Set the DisplayTime
-                    displayTime = sb.ToString();
                 }
                 catch (Exception error)
                 {

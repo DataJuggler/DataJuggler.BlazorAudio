@@ -4,11 +4,25 @@
     <TargetFramework>net8.0</TargetFramework>
     <RazorLangVersion>3.0</RazorLangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>8.0.0</Version>
+    <Version>8.0.14</Version>
     <Description>A component to make it easy to play audio or audio on the web.</Description>
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>AudioIcon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/DataJuggler/DataJuggler.BlazorAudio</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DataJuggler/DataJuggler.BlazorAudio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Blazor, HTML5 Audio</PackageTags>
+    <PackageReleaseNotes>This project is a port of DataJuggler.VideoPlayer, but some customizations are coming.</PackageReleaseNotes>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;BL0007;</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;BL0007;</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,8 +32,13 @@
     <None Remove="DataJuggler.BlazorAudioPlayerDemo\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="BlazorJSBridge.cs" />
+  </ItemGroup>
+
 
   <ItemGroup>
+    <PackageReference Include="DataJuggler.AudioTools" Version="1.0.3" />
     <PackageReference Include="DataJuggler.Blazor.Components" Version="8.12.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components" Version="8.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.10" />

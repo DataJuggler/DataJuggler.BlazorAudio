@@ -7,6 +7,8 @@ using DataJuggler.Blazor.Components.Interfaces;
 using DataJuggler.UltimateHelper;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 
 #endregion
@@ -14,36 +16,34 @@ using System.Threading.Tasks;
 namespace DataJuggler.BlazorAudio
 {
 
-    #region class BlazorAudioPlayer : IBlazorComponent
+    #region class BlazorAudioPlayer
     /// <summary>
-    /// This class is used to play audios and provide information on what button was clicked, 
+    /// This class is used to play audios and provide information on what button was clicked,
     /// so audio play time can be determined.
     /// </summary>
     public partial class BlazorAudioPlayer : IBlazorComponent
     {
-
+        
         #region Private Variables
-        private string name;
-        private IBlazorComponentParent parent;
-        private IJSRuntime jSRunTime;
-        private bool playing;
-        private string graphStyle;
-        private string controlsList;
-        private string contextMenuInfo;
-        private bool allowDownloads;
         private bool allowContextMenu;
-        private string displayTime;
+        private bool allowDownloads;
         private string audioDuration;
-        private bool labelHooked;
-        private bool showControlsContainer;
+        private AudioPlayer audioPlayer;
+        private string audioUrl;
+        private string contextMenuInfo;
+        private string controlsList;
+        private string displayTime;
+        private TimeSpan duration;
+        private string graphBackgroundStyle;
         private double graphHeight;
         private string graphHeightStyle;
-        private string graphBackgroundStyle;
-        private bool isFullScreen;
-        private string videlUrl;
-        private MessageUpdateInvokeHelper messageUpdateInvokeHelper;
+        private string graphStyle;        
+        private string name;
+        private double currentTime;
+        private IBlazorComponentParent parent;
+        private bool showControlsContainer;
         #endregion
-
+        
         #region Constructor
         /// <summary>
         /// Create a new instance of a BlazorAudioPlayer object.
@@ -54,40 +54,8 @@ namespace DataJuggler.BlazorAudio
             Init();
         }
         #endregion
-
-        #region Methods
-
-            #region FullScreenChanged()
-            /// <summary>
-            /// This method is called From JavaScript when the full screen event changes
-            /// </summary>
-            [JSInvokable]
-            public void FullScreenChanged()
-            {
-                        
-            }
-            #endregion
-            
-            #region GetCurrentTime()
-            /// <summary>
-            /// This method returns the Current Time
-            /// </summary>
-            public async Task<int> GetCurrentTime()
-            {
-                // initial value
-                int currentTime = 0;
-
-                // if the value for HasJSRunTime is true
-                if (HasJSRunTime) 
-                {
-                    // get the currentTime
-                    currentTime = await BlazorJSBridge.GetCurrentTime(this.JSRunTime);
-                }
-                
-                // return value
-                return currentTime;
-            }
-            #endregion
+        
+        #region Events
             
             #region GraphClicked()
             /// <summary>
@@ -97,6 +65,24 @@ namespace DataJuggler.BlazorAudio
             {
                 // to do: Figure out the current time clicked
                 // to do: Set current time in audio
+            }
+        #endregion
+
+        #endregion
+        
+        #region Methods
+            
+            #region GetCurrentTime()
+            /// <summary>
+            /// This method returns the Current Time
+            /// </summary>
+            public int GetCurrentTime()
+            {
+                // initial value
+                int currentTime = 0;
+                
+                // return value
+                return currentTime;
             }
             #endregion
             
@@ -110,12 +96,23 @@ namespace DataJuggler.BlazorAudio
                 AllowDownloads = false;
                 AllowContextMenu = false;
                 GraphHeight = .8;
-
+                
                 // Default Display Time until it is set by the audio since the Duration is displayed first
                 displayTime = "0:00";
-
+                
                 // Default to true
                 ShowControlsContainer = true;
+
+                // If the AudioUrl string exists
+                if (TextHelper.Exists(AudioUrl))
+                {
+                    AudioPlayer = new AudioPlayer(AudioUrl, this);
+                    Duration = AudioPlayer.Duration;
+                    AudioDuration = TimeHelper.FormatDisplayTime(Duration.TotalSeconds);
+                    CurrentTime = 0;
+                    DisplayTime = TimeHelper.FormatDisplayTime(CurrentTime) + " / ";
+                    AudioPlayer.OnTimeUpdated += UpdateTimeLabel;
+                }
             }
             #endregion
             
@@ -123,44 +120,24 @@ namespace DataJuggler.BlazorAudio
             /// <summary>
             /// method Play Or Pause
             /// </summary>
-            public async void PlayOrPause()
+            public void PlayOrPause()
             {
-                // local
-                double duration = 0;
-                
-                // if the value for HasJSRunTime is true
-                if (HasJSRunTime)
+                if (HasAudioPlayer)
                 {
-                    await BlazorJSBridge.PlayOrPause(jsRuntime: this.JSRunTime);
-
-                    // Toggle
-                    Playing = !Playing;
-
-                    // if we are playing but the Label is not hooked up
-                    if (Playing) 
+                    if (Playing)
                     {
-                        // if the Label has not been hooked yet
-                        if (!LabelHooked)
-                        {
-                            await BlazorJSBridge.TimeMonitor(this.JSRunTime);
-
-                            // get the duration of the audio
-                            duration = await BlazorJSBridge.GetAudioDuration(this.JSRunTime);
-
-                            // Format the display time
-                            AudioDuration = "/" + TimeHelper.FormatDisplayTime(duration);
-
-                            // The Label has been hooked up
-                            LabelHooked = true;
-                        }
+                        // Stop Playing
+                        AudioPlayer.Pause();
                     }
-
-                    // Ensure UI Updates
-                    StateHasChanged();
+                    else
+                    {
+                        // Press Play
+                        AudioPlayer.Play();
+                    }
                 }
             }
             #endregion
-        
+            
             #region ReceiveData(Message message)
             /// <summary>
             /// This method is used to receive messages from the parent page
@@ -171,24 +148,53 @@ namespace DataJuggler.BlazorAudio
                 // If the message object exists
                 if (NullHelper.Exists(message))
                 {
-                    // if there are one or more parameters
-                    if (ListHelper.HasOneOrMoreItems(message.Parameters))
+                    // If Refresh was sent
+                    if (message.Text == "Refresh")
                     {
-                        // if this is the JSRuntime param we need
-                        if (message.Parameters[0].Name == "JSRuntime")
-                        {
-                            // Store the JSRuntime
-                            this.JSRunTime = message.Parameters[0].Value as IJSRuntime;
-                        }
+                        // Update
+                        Refresh();
                     }
                 }
             }
             #endregion
-        
+
+            #region Refresh()
+            /// <summary>
+            /// method Refresh
+            /// </summary>
+            public void Refresh()
+            {
+                // Update the UI
+                InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+            }
+            #endregion
+            
+            #region UpdateTimeLabel(TimeSpan currentTime)
+            /// <summary>
+            /// method Update Time Label
+            /// </summary>
+            private void UpdateTimeLabel(TimeSpan currentTime)
+            {
+                InvokeAsync(() =>
+                {
+                    CurrentTime = currentTime.TotalSeconds;
+
+                    // Set the DisplayTime
+                    DisplayTime = TimeHelper.FormatDisplayTime(CurrentTime) + " / ";
+
+                    // Refresh
+                    StateHasChanged();
+                });
+            }
+            #endregion
+                
         #endregion
-
+            
         #region Properties
-
+                
             #region AllowContextMenu
             /// <summary>
             /// This property gets or sets the value for 'AllowContextMenu'.
@@ -197,11 +203,11 @@ namespace DataJuggler.BlazorAudio
             public bool AllowContextMenu
             {
                 get { return allowContextMenu; }
-                set 
+                set
                 {
                     // set the value
                     allowContextMenu = value;
-
+                        
                     // if the value for allowContextMenu is true
                     if (allowContextMenu)
                     {
@@ -216,7 +222,7 @@ namespace DataJuggler.BlazorAudio
                 }
             }
             #endregion
-            
+                
             #region AllowDownloads
             /// <summary>
             /// This property gets or sets the value for 'AllowDownloads'.
@@ -229,7 +235,7 @@ namespace DataJuggler.BlazorAudio
                 {
                     // set the value
                     allowDownloads = value;
-
+                        
                     // if the value for allowDownloads is true
                     if (allowDownloads)
                     {
@@ -244,7 +250,48 @@ namespace DataJuggler.BlazorAudio
                 }
             }
             #endregion
-            
+                
+            #region AudioDuration
+            /// <summary>
+            /// This property gets or sets the value for 'AudioDuration'.
+            /// </summary>
+            public string AudioDuration
+            {
+                get { return audioDuration; }
+                set { audioDuration = value; }
+            }
+            #endregion
+                
+            #region AudioPlayer
+            /// <summary>
+            /// This property gets or sets the value for 'AudioPlayer'.
+            /// </summary>
+            public AudioPlayer AudioPlayer
+            {
+                get { return audioPlayer; }
+                set { audioPlayer = value; }
+            }
+            #endregion
+                
+            #region AudioUrl
+            /// <summary>
+            /// This property gets or sets the value for 'AudioUrl'.
+            /// </summary>
+            [Parameter]
+            public string AudioUrl
+            {
+                get { return audioUrl; }
+                set 
+                {
+                    // set the value
+                    audioUrl = value;
+
+                    // Perform initializations for this object
+                    Init();
+                }
+            }
+            #endregion
+                
             #region ContextMenuInfo
             /// <summary>
             /// This property gets or sets the value for 'ContextMenuInfo'.
@@ -255,7 +302,7 @@ namespace DataJuggler.BlazorAudio
                 set { contextMenuInfo = value; }
             }
             #endregion
-            
+                
             #region ControlsList
             /// <summary>
             /// This property gets or sets the value for 'ControlsList'.
@@ -264,6 +311,17 @@ namespace DataJuggler.BlazorAudio
             {
                 get { return controlsList; }
                 set { controlsList = value; }
+            }
+            #endregion
+                
+            #region CurrentTime
+            /// <summary>
+            /// This property gets or sets the value for 'CurrentTime'.
+            /// </summary>
+            public double CurrentTime
+            {
+                get { return currentTime; }
+                set { currentTime = value; }
             }
             #endregion
             
@@ -277,7 +335,18 @@ namespace DataJuggler.BlazorAudio
                 set { displayTime = value; }
             }
             #endregion
-            
+                
+            #region Duration
+            /// <summary>
+            /// This property gets or sets the value for 'Duration'.
+            /// </summary>
+            public TimeSpan Duration
+            {
+                get { return duration; }
+                set { duration = value; }
+            }
+            #endregion
+                
             #region GraphBackgroundStyle
             /// <summary>
             /// This property gets or sets the value for 'GraphBackgroundStyle'.
@@ -288,7 +357,7 @@ namespace DataJuggler.BlazorAudio
                 set { graphBackgroundStyle = value; }
             }
             #endregion
-            
+                
             #region GraphHeight
             /// <summary>
             /// This property gets or sets the value for 'GraphHeight'.
@@ -296,17 +365,17 @@ namespace DataJuggler.BlazorAudio
             public double GraphHeight
             {
                 get { return graphHeight; }
-                set 
+                set
                 {
                     // set the value
-                    graphHeight = value; 
-
+                    graphHeight = value;
+                        
                     // set the string value
                     graphHeightStyle = graphHeight.ToString() + "vh";
                 }
             }
             #endregion
-            
+                
             #region GraphHeightStyle
             /// <summary>
             /// This property gets or sets the value for 'GraphHeightStyle'.
@@ -317,7 +386,7 @@ namespace DataJuggler.BlazorAudio
                 set { graphHeightStyle = value; }
             }
             #endregion
-            
+                
             #region GraphStyle
             /// <summary>
             /// This property gets or sets the value for 'GraphStyle'.
@@ -328,24 +397,24 @@ namespace DataJuggler.BlazorAudio
                 set { graphStyle = value; }
             }
             #endregion
-            
-            #region HasJSRunTime
+                
+            #region HasAudioPlayer
             /// <summary>
-            /// This property returns true if this object has a 'JSRunTime'.
+            /// This property returns true if this object has an 'AudioPlayer'.
             /// </summary>
-            public bool HasJSRunTime
+            public bool HasAudioPlayer
             {
                 get
                 {
                     // initial value
-                    bool hasJSRunTime = (this.JSRunTime != null);
-                    
+                    bool hasAudioPlayer = (this.AudioPlayer != null);
+                        
                     // return value
-                    return hasJSRunTime;
+                    return hasAudioPlayer;
                 }
             }
             #endregion
-            
+                
             #region HasParent
             /// <summary>
             /// This property returns true if this object has a 'Parent'.
@@ -356,35 +425,13 @@ namespace DataJuggler.BlazorAudio
                 {
                     // initial value
                     bool hasParent = (this.Parent != null);
-                    
+                        
                     // return value
                     return hasParent;
                 }
             }
-            #endregion                      
-            
-            #region JSRunTime
-            /// <summary>
-            /// This property gets or sets the value for 'JSRunTime'.
-            /// </summary>
-            public IJSRuntime JSRunTime
-            {
-                get { return jSRunTime; }
-                set { jSRunTime = value; }
-            }
             #endregion
-            
-            #region LabelHooked
-            /// <summary>
-            /// This property gets or sets the value for 'LabelHooked'.
-            /// </summary>
-            public bool LabelHooked
-            {
-                get { return labelHooked; }
-                set { labelHooked = value; }
-            }
-            #endregion
-            
+                
             #region Name
             /// <summary>
             /// This property gets or sets the value for 'Name'.
@@ -395,7 +442,7 @@ namespace DataJuggler.BlazorAudio
                 set { name = value; }
             }
             #endregion
-            
+                
             #region Parent
             /// <summary>
             /// This property gets or sets the value for 'Parent'.
@@ -404,10 +451,10 @@ namespace DataJuggler.BlazorAudio
             public IBlazorComponentParent Parent
             {
                 get { return parent; }
-                set 
-                { 
+                set
+                {
                     parent = value;
-
+                        
                     // if the value for HasParent is true
                     if (HasParent)
                     {
@@ -417,18 +464,31 @@ namespace DataJuggler.BlazorAudio
                 }
             }
             #endregion
-
+                
             #region Playing
             /// <summary>
             /// This property gets or sets the value for 'Playing'.
             /// </summary>
             public bool Playing
             {
-                get { return playing; }
-                set { playing = value; }
+                get
+                {
+                    // initial value
+                    bool isPlaying = false;
+                        
+                    // if the value for HasAudioPlayer is true
+                    if (HasAudioPlayer)
+                    {
+                        // Set the return value
+                        isPlaying = AudioPlayer.IsPlaying;
+                    }
+                        
+                    // return value
+                    return isPlaying;
+                }
             }
             #endregion
-            
+                
             #region ShowControlsContainer
             /// <summary>
             /// This property gets or sets the value for 'ShowControlsContainer'.
@@ -440,33 +500,10 @@ namespace DataJuggler.BlazorAudio
                 set { showControlsContainer = value; }
             }
             #endregion
-            
-            #region AudioUrl
-            /// <summary>
-            /// This property gets or sets the value for 'VidelUrl'.
-            /// </summary>
-            [Parameter]
-            public string AudioUrl
-            {
-                get { return videlUrl; }
-                set { videlUrl = value; }
-            }
-            #endregion
-            
-            #region AudioDuration
-            /// <summary>
-            /// This property gets or sets the value for 'AudioDuration'.
-            /// </summary>
-            public string AudioDuration
-            {
-                get { return audioDuration; }
-                set { audioDuration = value; }
-            }
-            #endregion
-            
+                
         #endregion
-
+            
     }
     #endregion
-
+    
 }

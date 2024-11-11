@@ -3,6 +3,34 @@
     used from a library project/package.
 */
 
+.audiocomponent
+{
+    width: 100%;
+}
+.audiotimecontrols
+{
+    display: inline;
+    font-family: Arial, Verdana;
+    font-size: .8em;
+    color: rgb(111, 201, 241);    
+    text-align: right;
+    float: left;
+    position: relative;
+    top: 16px;
+    left: 20px;
+}
+.audioduration
+{
+    display: inline;
+    position: relative;
+    left: 0px;
+}
+.audiotimedisplay
+{
+    display: inline;
+    position: relative;
+    left: 0px;
+}
 .blazoraudioplayer
 {
     z-index: 5 !important;
@@ -75,31 +103,3 @@
 {
     outline: none;
 }
-.timedisplay
-{
-    font-family: Arial, Verdana;
-    font-size: .8em;
-    color: rgb(111, 201, 241);
-    position: relative;
-    left: 6%;
-    top: 2.12vh;
-    text-align: right;
-    float: left;
-}
-.audiocomponent
-{
-    width: 100%;
-}
-.audioduration
-{
-    display: inline;
-    font-family: Arial, Verdana;
-    font-size: .8em;
-    color: rgb(111, 201, 241);
-    position: relative;
-    left: 6%;
-    top: 2.12vh;
-    text-align: right;
-    float: left;
-}
-

@@ -46,8 +46,10 @@
             {
                 <button class="playbutton" @onclick="PlayOrPause"></button>
             }
-            <label id="audioTime" class="timedisplay">@DisplayTime</label>
-            <label id="audioDuration" class="audioduration">@AudioDuration</label>            
+            <div class="audiotimecontrols textdonotwrap">
+                <label id="audioTime" class="audiotimedisplay">@DisplayTime</label>
+                <label id="audioDuration" class="audioduration">@AudioDuration</label>            
+            </div>
             <div class="@GraphBackgroundStyle">
                 <button id="graphButton" class="@GraphStyle" @onclick="GraphClicked" ></button>
             </div>
