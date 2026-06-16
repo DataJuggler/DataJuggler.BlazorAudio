@@ -29,6 +29,16 @@ namespace DataJuggler.BlazorAudio
         
         #region Methods
             
+            #region FormatDisplayTime(TimeSpan time)
+            /// <summary>
+            /// method returns the Display Time
+            /// </summary>
+            public static string FormatDisplayTime(TimeSpan time)
+            {
+                return FormatDisplayTime(time.TotalSeconds);
+            }
+            #endregion
+            
             #region FormatDisplayTime(double totalSeconds)
             /// <summary>
             /// This method formats the seconds into Display Time

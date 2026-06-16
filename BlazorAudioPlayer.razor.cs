@@ -39,9 +39,14 @@ namespace DataJuggler.BlazorAudio
         private string graphHeightStyle;
         private string graphStyle;        
         private string name;
-        private double currentTime;
+        private TimeSpan currentTime;
         private IBlazorComponentParent parent;
         private bool showControlsContainer;
+        private double percentComplete;
+        private string transitionDuration;
+        private string progressDisplay;
+        private bool visible;
+        private string display;
         #endregion
         
         #region Constructor
@@ -96,6 +101,14 @@ namespace DataJuggler.BlazorAudio
                 AllowDownloads = false;
                 AllowContextMenu = false;
                 GraphHeight = .8;
+                ProgressDisplay = "none";
+
+                // defaulting to true
+                Visible = true;
+
+                // Start at 0
+                TransitionDuration = "width 1s linear";
+                PercentComplete = -1;
                 
                 // Default Display Time until it is set by the audio since the Duration is displayed first
                 displayTime = "0:00";
@@ -109,7 +122,7 @@ namespace DataJuggler.BlazorAudio
                     AudioPlayer = new AudioPlayer(AudioUrl, this);
                     Duration = AudioPlayer.Duration;
                     AudioDuration = TimeHelper.FormatDisplayTime(Duration.TotalSeconds);
-                    CurrentTime = 0;
+                    CurrentTime = TimeSpan.Zero;
                     DisplayTime = TimeHelper.FormatDisplayTime(CurrentTime) + " / ";
                     AudioPlayer.OnTimeUpdated += UpdateTimeLabel;
                 }
@@ -126,11 +139,18 @@ namespace DataJuggler.BlazorAudio
                 {
                     if (Playing)
                     {
-                        // Stop Playing
+                        TransitionDuration = "width 0s linear";
+
+                        // Pause Playing
                         AudioPlayer.Pause();
                     }
                     else
                     {
+                        TransitionDuration = "width 1s linear";
+
+                        // show the progressbar
+                        ProgressDisplay = "block";
+
                         // Press Play
                         AudioPlayer.Play();
                     }
@@ -151,6 +171,12 @@ namespace DataJuggler.BlazorAudio
                     // If Refresh was sent
                     if (message.Text == "Refresh")
                     {
+                        // hide the progressbar
+                        ProgressDisplay = "none";
+
+                        // Reset to 0
+                        PercentComplete = 0;
+
                         // Update
                         Refresh();
                     }
@@ -171,6 +197,31 @@ namespace DataJuggler.BlazorAudio
                 });
             }
             #endregion
+
+            #region SetAudioUrl(string audioFilePath)
+            /// <summary>
+            /// Set Audio Url
+            /// </summary>
+            public void SetAudioUrl(string audioFilePath)
+            {
+                // Set the AudioURL
+                AudioUrl = audioFilePath;
+            }
+            #endregion
+            
+            #region SetVisible(bool visible)
+            /// <summary>
+            /// Sets the visibility of the AudioPlayer
+            /// </summary>
+            public void SetVisible(bool visible)
+            {
+                // Set the display
+                Display = visible ? "block" : "none";
+    
+                // Refresh the UI
+                Refresh();
+            }
+            #endregion
             
             #region UpdateTimeLabel(TimeSpan currentTime)
             /// <summary>
@@ -180,13 +231,24 @@ namespace DataJuggler.BlazorAudio
             {
                 InvokeAsync(() =>
                 {
-                    CurrentTime = currentTime.TotalSeconds;
+                    CurrentTime = currentTime;
 
                     // Set the DisplayTime
                     DisplayTime = TimeHelper.FormatDisplayTime(CurrentTime) + " / ";
 
+                    if (Duration.TotalSeconds > 0)
+                    {
+                        ProgressDisplay = "block";
+                        PercentComplete = (CurrentTime.TotalSeconds / Duration.TotalSeconds) * 100;
+                    }
+                    else
+                    {
+                        ProgressDisplay = "none";
+                        PercentComplete = 0;
+                    }
+
                     // Refresh
-                    StateHasChanged();
+                    Refresh();
                 });
             }
             #endregion
@@ -318,10 +380,21 @@ namespace DataJuggler.BlazorAudio
             /// <summary>
             /// This property gets or sets the value for 'CurrentTime'.
             /// </summary>
-            public double CurrentTime
+            public TimeSpan CurrentTime
             {
                 get { return currentTime; }
                 set { currentTime = value; }
+            }
+            #endregion
+            
+            #region Display
+            /// <summary>
+            /// This property gets or sets the value for 'Display'.
+            /// </summary>
+            public string Display
+            {
+                get { return display; }
+                set { display = value; }
             }
             #endregion
             
@@ -465,6 +538,35 @@ namespace DataJuggler.BlazorAudio
             }
             #endregion
                 
+            #region PercentComplete
+            /// <summary>
+            /// This property gets or sets the value for 'PercentComplete'.
+            /// </summary>
+            public double PercentComplete
+            {
+                get { return percentComplete; }
+                set { percentComplete = value; }
+            }
+            #endregion
+            
+            #region PercentCompletePercent
+            /// <summary>
+            /// This read only property returns the value of PercentComplete plus % sign
+            /// </summary>
+            public string PercentCompletePercent
+            {
+                
+                get
+                {
+                    // initial value
+                    string percentCompletePercent = PercentComplete + "%";                    
+                    
+                    // return value
+                    return percentCompletePercent;
+                }
+            }
+            #endregion
+            
             #region Playing
             /// <summary>
             /// This property gets or sets the value for 'Playing'.
@@ -489,6 +591,17 @@ namespace DataJuggler.BlazorAudio
             }
             #endregion
                 
+            #region ProgressDisplay
+            /// <summary>
+            /// This property gets or sets the value for 'ProgressDisplay'.
+            /// </summary>
+            public string ProgressDisplay
+            {
+                get { return progressDisplay; }
+                set { progressDisplay = value; }
+            }
+            #endregion
+            
             #region ShowControlsContainer
             /// <summary>
             /// This property gets or sets the value for 'ShowControlsContainer'.
@@ -501,6 +614,29 @@ namespace DataJuggler.BlazorAudio
             }
             #endregion
                 
+            #region TransitionDuration
+            /// <summary>
+            /// This property gets or sets the value for 'TransitionDuration'.
+            /// </summary>
+            public string TransitionDuration
+            {
+                get { return transitionDuration; }
+                set { transitionDuration = value; }
+            }
+            #endregion
+            
+            #region Visible
+            /// <summary>
+            /// This property gets or sets the value for 'Visible'.
+            /// </summary>
+            [Parameter]
+            public bool Visible
+            {
+                get { return visible; }
+                set { visible = value; }
+            }
+            #endregion
+            
         #endregion
             
     }

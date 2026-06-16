@@ -2,17 +2,17 @@
 
 <Styled @bind-Classname="@GraphStyle">
     float: left;
-    background-color: transparent;
-    border: none;
-    outline: none;
-    width: 50%;
-    height: @GraphHeightStyle;
     position: relative;
     left: 0%;
-    top: .4vh;
-    z-index: 20 !important;
-    float: left;
-    color: rgb(125,25,25);
+    top: .2vh;
+    z-index: 20;    
+    background-color: rgb(111, 201, 241);
+    border: none;
+    outline: none;
+    width: @PercentCompletePercent;
+    height: @GraphHeightStyle;
+    display: @progressDisplay;
+    transition: @TransitionDuration;
 </Styled>
 <Styled @bind-Classname="@GraphBackgroundStyle">
     float: right;
@@ -25,36 +25,38 @@
     position: absolute;
     left: 0%;
     top: .2vh;
-    z-index: 10 !important;
+    z-index: 10;
 </Styled>
 
-<div class="blazoraudioplayer">
-    <br><br>
-    <audio class="audiocomponent" id="audioPlayer" controlsList="@ControlsList" oncontextmenu="@ContextMenuInfo">
-        <source src="@AudioUrl" type="audio/mp3">
-        Your browser does not support HTML audio.
-    </audio> 
+<div style="display: @Display;">
+    <div class="blazoraudioplayer">
+        <br><br>
+        <audio class="audiocomponent" id="audioPlayer" controlsList="@ControlsList" oncontextmenu="@ContextMenuInfo">
+            <source src="@AudioUrl" type="audio/mp3">
+            Your browser does not support HTML audio.
+        </audio> 
 
-    @if(ShowControlsContainer)
-    {  
-        <div class="controlcontainer">
-            @if(Playing)
-            { 
-                <button class="pausebutton" @onclick="PlayOrPause"></button>
-            }
-            else
-            {
-                <button class="playbutton" @onclick="PlayOrPause"></button>
-            }
-            <div class="audiotimecontrols textdonotwrap">
-                <label id="audioTime" class="audiotimedisplay">@DisplayTime</label>
-                <label id="audioDuration" class="audioduration">@AudioDuration</label>            
+        @if(ShowControlsContainer)
+        {  
+            <div class="controlcontainer">
+                @if(Playing)
+                { 
+                    <button class="pausebutton" @onclick="PlayOrPause"></button>
+                }
+                else
+                {
+                    <button class="playbutton" @onclick="PlayOrPause"></button>
+                }
+                <div class="audiotimecontrols textdonotwrap">
+                    <label id="audioTime" class="audiotimedisplay">@DisplayTime</label>
+                    <label id="audioDuration" class="audioduration">@AudioDuration</label>            
+                </div>
+                <div class="@GraphBackgroundStyle">
+                    <button id="graphButton" class="@GraphStyle" @onclick="GraphClicked" ></button>
+                </div>
             </div>
-            <div class="@GraphBackgroundStyle">
-                <button id="graphButton" class="@GraphStyle" @onclick="GraphClicked" ></button>
-            </div>
-        </div>
-    }
+        }
+    </div>
 </div>
 
 

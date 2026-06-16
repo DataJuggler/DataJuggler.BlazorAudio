@@ -6,6 +6,8 @@ using System;
 using NAudio.Wave;
 using System.Timers;
 using DataJuggler.Blazor.Components;
+using DataJuggler.Blazor.Components.Interfaces;
+using Microsoft.AspNetCore.Components;
 
 #endregion
 
@@ -16,33 +18,36 @@ namespace DataJuggler.BlazorAudio
     /// <summary>
     /// This class is used to play audio
     /// </summary>
-    public class AudioPlayer : IDisposable
+    public class AudioPlayer : ComponentBase, IDisposable, IBlazorComponent
     {
         
         #region Private Variables
         private AudioFileReader audioFileReader;
+        private string name;
+        private BlazorAudioPlayer blazorAudioPlayer;
+        private IBlazorComponentParent parent;
         private IWavePlayer player;
         private Timer timer;
-        private BlazorAudioPlayer parent;
-        public event Action<TimeSpan> OnTimeUpdated;
+        private Action<TimeSpan> onTimeUpdated;
         #endregion
         
         #region Constructor
         /// <summary>
         /// Create a new instance of a 'AudioPlayer' object.
         /// </summary>
-        public AudioPlayer(string filePath, BlazorAudioPlayer blazorParent)
+        public AudioPlayer(string filePath, BlazorAudioPlayer blazorAudioPlayer)
         {
             // Store the parent
-            Parent = blazorParent;
+            BlazorAudioPlayer = blazorAudioPlayer;
 
             Player = new WaveOutEvent();
             AudioFileReader = new AudioFileReader(filePath);
             Player.Init(audioFileReader);
             player.PlaybackStopped += OnPlaybackStopped;
-            
+
+
             Timer = new Timer(1000); // Update every second
-            Timer.Elapsed += (sender, e) => OnTimeUpdated?.Invoke(CurrentTime);
+            Timer.Elapsed += (sender, e) => OnTimeUpdated(CurrentTime);
         }
         #endregion
         
@@ -61,7 +66,7 @@ namespace DataJuggler.BlazorAudio
                 if (HasParent)
                 {
                     // Create a new instance of a 'Message' object.
-                    Message message = new Message();                   
+                    Message message = new Message();
 
                     // Set the Text
                     message.Text = "Refresh";
@@ -132,6 +137,30 @@ namespace DataJuggler.BlazorAudio
             }
             #endregion
             
+            #region ReceiveData(Message message)
+            /// <summary>
+            /// This method is used to receive messages from other components or pages
+            /// </summary>
+            public void ReceiveData(Message message)
+            {
+
+            }
+            #endregion
+
+            #region Refresh()
+            /// <summary>
+            /// method Refresh
+            /// </summary>
+            public void Refresh()
+            {
+                // Update the UI
+                InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+            }
+            #endregion
+            
             #region Stop()
             /// <summary>
             /// method Stop
@@ -173,6 +202,17 @@ namespace DataJuggler.BlazorAudio
             {
                 get { return audioFileReader; }
                 set { audioFileReader = value; }
+            }
+            #endregion
+            
+            #region BlazorAudioPlayer
+            /// <summary>
+            /// This property gets or sets the value for 'BlazorAudioPlayer'.
+            /// </summary>
+            public BlazorAudioPlayer BlazorAudioPlayer
+            {
+                get { return blazorAudioPlayer; }
+                set { blazorAudioPlayer = value; }
             }
             #endregion
             
@@ -234,13 +274,30 @@ namespace DataJuggler.BlazorAudio
                 {
                     // initial value
                     bool hasAudioFileReader = (this.AudioFileReader != null);
-                    
+
                     // return value
                     return hasAudioFileReader;
                 }
             }
             #endregion
+            
+            #region HasBlazorAudioPlayer
+            /// <summary>
+            /// This property returns true if this object has a 'BlazorAudioPlayer'.
+            /// </summary>
+            public bool HasBlazorAudioPlayer
+            {
+                get
+                {
+                    // initial value
+                    bool hasBlazorAudioPlayer = (BlazorAudioPlayer != null);
 
+                    // return value
+                    return hasBlazorAudioPlayer;
+                }
+            }
+            #endregion
+            
             #region HasParent
             /// <summary>
             /// This property returns true if this object has a 'Parent'.
@@ -251,9 +308,26 @@ namespace DataJuggler.BlazorAudio
                 {
                     // initial value
                     bool hasParent = (this.Parent != null);
-                    
+
                     // return value
                     return hasParent;
+                }
+            }
+            #endregion
+            
+            #region HasPlayer
+            /// <summary>
+            /// This property returns true if this object has a 'Player'.
+            /// </summary>
+            public bool HasPlayer
+            {
+                get
+                {
+                    // initial value
+                    bool hasPlayer = (this.Player != null);
+
+                    // return value
+                    return hasPlayer;
                 }
             }
             #endregion
@@ -268,7 +342,7 @@ namespace DataJuggler.BlazorAudio
                 {
                     // initial value
                     bool hasTimer = (this.Timer != null);
-                    
+
                     // return value
                     return hasTimer;
                 }
@@ -280,15 +354,44 @@ namespace DataJuggler.BlazorAudio
             /// This read only property returns true if PlayBackState equals Playing
             /// </summary>
             public bool IsPlaying
-            {  
+            {
                 get
                 {
                     // set value
                     bool isPlaying = (PlaybackState == PlaybackState.Playing);
-                    
+
                     // return value
                     return isPlaying;
                 }
+            }
+            #endregion
+            
+            #region Name
+            /// <summary>
+            /// This property gets or sets the value for Name
+            /// </summary>
+            [Parameter]
+            public string Name
+            {
+                get
+                {
+                    return name;
+                }
+                set
+                {
+                    name = value;
+                }
+            }
+            #endregion
+            
+            #region OnTimeUpdated
+            /// <summary>
+            /// This property gets or sets the value for 'OnTimeUpdated'.
+            /// </summary>
+            public Action<TimeSpan> OnTimeUpdated
+            {
+                get { return onTimeUpdated; }
+                set { onTimeUpdated = value; }
             }
             #endregion
             
@@ -296,7 +399,7 @@ namespace DataJuggler.BlazorAudio
             /// <summary>
             /// This property gets or sets the value for 'Parent'.
             /// </summary>
-            public BlazorAudioPlayer Parent
+            public IBlazorComponentParent Parent
             {
                 get { return parent; }
                 set { parent = value; }
@@ -320,26 +423,9 @@ namespace DataJuggler.BlazorAudio
                         // set the return value
                         playbackState = Player.PlaybackState;
                     }
-                    
+
                     // return value
                     return playbackState;
-                }
-            }
-            #endregion
-            
-            #region HasPlayer
-            /// <summary>
-            /// This property returns true if this object has a 'Player'.
-            /// </summary>
-            public bool HasPlayer
-            {
-                get
-                {
-                    // initial value
-                    bool hasPlayer = (this.Player != null);
-                    
-                    // return value
-                    return hasPlayer;
                 }
             }
             #endregion

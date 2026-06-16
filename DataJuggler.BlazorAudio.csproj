@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RazorLangVersion>3.0</RazorLangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>8.0.14</Version>
+    <Version>10.0.0</Version>
     <Description>A component to make it easy to play audio or audio on the web.</Description>
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -36,14 +36,17 @@
     <Compile Remove="BlazorJSBridge.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="C:\Users\Corby\.nuget\packages\datajuggler.blazor.components\10.1.0\contentFiles\any\net10.0\SaveCancelComponent.razor.cs" />
+  </ItemGroup>
+
 
   <ItemGroup>
-    <PackageReference Include="DataJuggler.AudioTools" Version="1.0.3" />
-    <PackageReference Include="DataJuggler.Blazor.Components" Version="8.12.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components" Version="8.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.10" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="DataJuggler.AudioTools" Version="10.0.1" />
+    <PackageReference Include="DataJuggler.Blazor.Components" Version="10.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
   </ItemGroup>
 
 
