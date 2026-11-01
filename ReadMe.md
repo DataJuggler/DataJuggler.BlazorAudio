@@ -2,6 +2,9 @@
 
 # Updates
 
+11.1.2026: DataJuggler.Blazor.Components had to be updated due to a vulnerability in
+System.Security.Cryptography.Pkcs.
+
 6.16.2026: This project has been updated for .NET 10.
 Also some new properties to make this applear invisible
 
