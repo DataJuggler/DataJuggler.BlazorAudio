@@ -2,6 +2,8 @@
 
 # Updates
 
+11.14.2026: This project has been updated to .NET 11
+
 11.1.2026: DataJuggler.Blazor.Components had to be updated due to a vulnerability in
 System.Security.Cryptography.Pkcs.
 
